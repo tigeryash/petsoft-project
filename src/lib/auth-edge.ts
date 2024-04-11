@@ -1,47 +1,13 @@
-import NextAuth, { NextAuthConfig } from "next-auth";
-import bcrypt from "bcryptjs";
-import Credentials from "next-auth/providers/credentials";
-import { getUserByEmail } from "./server-utils";
-import { authSchema } from "./validations";
+import { NextAuthConfig } from "next-auth";
+import prisma from "./db";
 
-const config = {
+export const nextAuthEdgeConfig = {
   pages: {
     signIn: "/login",
   },
-  providers: [
-    Credentials({
-      async authorize(credentials) {
-        //runs on login
-        // validation
-        const validatedFormData = authSchema.safeParse(credentials);
-        if (!validatedFormData.success) {
-          return null;
-        }
-
-        //extract values
-        const { email, password } = validatedFormData.data;
-
-        const user = await getUserByEmail(email);
-        if (!user) {
-          return null;
-        }
-
-        const passwordsMatch = await bcrypt.compare(
-          password,
-          user.hashedPassword
-        );
-        if (!passwordsMatch) {
-          console.log("Invalid credentials");
-          return null;
-        }
-
-        return user;
-      },
-    }),
-  ],
   callbacks: {
     authorized: ({ auth, request }) => {
-      //runson every request with middleware
+      // runs on every request with middleware
       const isLoggedIn = Boolean(auth?.user);
       const isTryingToAccessApp = request.nextUrl.pathname.includes("/app");
 
@@ -60,8 +26,8 @@ const config = {
       if (
         isLoggedIn &&
         (request.nextUrl.pathname.includes("/login") ||
-          (request.nextUrl.pathname.includes("/signup") &&
-            auth?.user.hasAccess))
+          request.nextUrl.pathname.includes("/signup")) &&
+        auth?.user.hasAccess
       ) {
         return Response.redirect(new URL("/app/dashboard", request.nextUrl));
       }
@@ -73,6 +39,7 @@ const config = {
         ) {
           return Response.redirect(new URL("/payment", request.nextUrl));
         }
+
         return true;
       }
 
@@ -84,13 +51,19 @@ const config = {
     },
     jwt: async ({ token, user, trigger }) => {
       if (user) {
+        // on sign in
         token.userId = user.id;
         token.email = user.email!;
         token.hasAccess = user.hasAccess;
       }
 
       if (trigger === "update") {
-        const userFromDb = await getUserByEmail(token.email);
+        // on every request
+        const userFromDb = await prisma.user.findUnique({
+          where: {
+            email: token.email,
+          },
+        });
         if (userFromDb) {
           token.hasAccess = userFromDb.hasAccess;
         }
@@ -99,18 +72,11 @@ const config = {
       return token;
     },
     session: ({ session, token }) => {
-      if (session.user) {
-        session.user.id = token.userId;
-        session.user.hasAccess = token.hasAccess;
-      }
+      session.user.id = token.userId;
+      session.user.hasAccess = token.hasAccess;
+
       return session;
     },
   },
+  providers: [],
 } satisfies NextAuthConfig;
-
-export const {
-  auth,
-  signIn,
-  signOut,
-  handlers: { GET, POST },
-} = NextAuth(config);

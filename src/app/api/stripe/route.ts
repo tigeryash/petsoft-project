@@ -3,10 +3,10 @@ import prisma from "@/lib/db";
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const signature = request.headers.get("strip-signature");
+  const body = await request.text();
+  const signature = request.headers.get("stripe-signature");
 
-  //verify webhook come from stripe
+  // verify webhook came from Stripe
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -14,15 +14,17 @@ export async function POST(request: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-  } catch (err) {
+  } catch (error) {
+    console.log("Webhook verification failed", error);
     return Response.json(null, { status: 400 });
   }
 
+  // fulfill order
   switch (event.type) {
     case "checkout.session.completed":
       await prisma.user.update({
         where: {
-          email: body.data.object.customer_email,
+          email: event.data.object.customer_email,
         },
         data: {
           hasAccess: true,
@@ -30,18 +32,9 @@ export async function POST(request: Request) {
       });
       break;
     default:
-      console.log("event type not handled %{event.type");
+      console.log(`Unhandled event type ${event.type}`);
   }
 
-  //fulfill order
-  await prisma.user.update({
-    where: {
-      email: body.data.object.customer_email,
-    },
-    data: {
-      hasAccess: true,
-    },
-  });
-
+  // return 200 OK
   return Response.json(null, { status: 200 });
 }

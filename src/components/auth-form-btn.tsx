@@ -1,16 +1,19 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
+import React from "react";
 import { Button } from "./ui/button";
+import { useFormStatus } from "react-dom";
 
-const AuthFormBtn = ({ type }: { type: "login" | "signup" }) => {
+type AuthFormBtnProps = {
+  type: "logIn" | "signUp";
+};
+
+export default function AuthFormBtn({ type }: AuthFormBtnProps) {
   const { pending } = useFormStatus();
 
   return (
-    <Button disabled={pending} className="mt-4 w-full">
-      {type === "login" ? "Log In" : "Sign Up"}
+    <Button disabled={pending}>
+      {type === "logIn" ? "Log In" : "Sign Up"}
     </Button>
   );
-};
-
-export default AuthFormBtn;
+}

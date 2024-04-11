@@ -7,26 +7,26 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-const Page = ({
+export default function Page({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
-}) => {
+}) {
   const [isPending, startTransition] = useTransition();
   const { data: session, update, status } = useSession();
   const router = useRouter();
 
   return (
-    <main className="flex flex-col item-center space-y-10">
+    <main className="flex flex-col items-center space-y-10">
       <H1>PetSoft access requires payment</H1>
 
       {searchParams.success && (
         <Button
-          disabled={status === "loading" || session?.user.hasAccess}
           onClick={async () => {
             await update(true);
             router.push("/app/dashboard");
           }}
+          disabled={status === "loading" || session?.user.hasAccess}
         >
           Access PetSoft
         </Button>
@@ -44,6 +44,7 @@ const Page = ({
           Buy lifetime access for $299
         </Button>
       )}
+
       {searchParams.success && (
         <p className="text-sm text-green-700">
           Payment successful! You now have lifetime access to PetSoft.
@@ -56,6 +57,4 @@ const Page = ({
       )}
     </main>
   );
-};
-
-export default Page;
+}

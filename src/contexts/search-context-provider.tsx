@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, createContext } from "react";
+import { createContext, useState } from "react";
 
-type SearchContextProviderProps = {
+type SearchContextProvider = {
   children: React.ReactNode;
 };
 
@@ -13,18 +13,27 @@ type TSearchContext = {
 
 export const SearchContext = createContext<TSearchContext | null>(null);
 
-const SearchContextProvider = ({ children }: SearchContextProviderProps) => {
-  const [searchQuery, setSearchQuery] = useState<string>("");
+export default function SearchContextProvider({
+  children,
+}: SearchContextProvider) {
+  // state
+  const [searchQuery, setSearchQuery] = useState("");
 
+  // derived state
+
+  // event handlers / actions
   const handleChangeSearchQuery = (newValue: string) => {
     setSearchQuery(newValue);
   };
 
   return (
-    <SearchContext.Provider value={{ searchQuery, handleChangeSearchQuery }}>
+    <SearchContext.Provider
+      value={{
+        searchQuery,
+        handleChangeSearchQuery,
+      }}
+    >
       {children}
     </SearchContext.Provider>
   );
-};
-
-export default SearchContextProvider;
+}

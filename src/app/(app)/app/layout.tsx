@@ -4,12 +4,12 @@ import BackgroundPattern from "@/components/background-pattern";
 import { Toaster } from "@/components/ui/sonner";
 import PetContextProvider from "@/contexts/pet-context-provider";
 import SearchContextProvider from "@/contexts/search-context-provider";
-import { checkAuth, getPetByUserID } from "@/lib/server-utils";
+import { checkAuth, getPetsByUserId } from "@/lib/server-utils";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await checkAuth();
 
-  const data = await getPetByUserID(session.user.id);
+  const data = await getPetsByUserId(session.user.id);
 
   return (
     <>
