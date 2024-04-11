@@ -19,7 +19,7 @@ const config = {
     },
     extend: {
       colors: {
-        light: "rgba(0,0,0, .08)",
+        light: "rgba(0, 0, 0, 0.08)",
       },
     },
   },
